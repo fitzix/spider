@@ -8,18 +8,20 @@ import time
 import json
 import os
 
-chrome = webdriver.Chrome()
+def create_brower():
+    chrome_options = webdriver.chrome.options.Options()
+    chrome_options.add_argument('headless')
+    return webdriver.Chrome(options=chrome_options)
 
 def check_cookie():
     if os.path.exists('./data/cookie.json'):
-        chrome_options = webdriver.chrome.options.Options()
-        chrome_options.add_argument('--headless')
-        chrome = webdriver.Chrome(options=chrome_options)
         chrome.get("https://www.tianyancha.com")
         with open('./data/cookie.json', 'r') as f:
             cookies = json.loads(f.read())
             for cookie in cookies:
                 chrome.add_cookie(cookie)
+
+chrome = create_brower()
 
 check_cookie()
 
@@ -29,6 +31,12 @@ chrome.get("https://www.tianyancha.com/search?key=百度")
 
 try:
     chrome.find_element_by_xpath("//div[text()='登录']")
+#  关闭无头浏览器
+    chrome.close()
+    chrome.quit()
+# 
+    chrome = webdriver.Chrome()
+
     chrome.find_element_by_xpath("//input[@onfocus=\"clearMsg('phone')\"]").send_keys(13699146887)
     chrome.find_element_by_xpath("//div[text()='短信验证码登录']").click()
     chrome.find_element_by_id('smsCodeBtn').click()
@@ -45,6 +53,8 @@ try:
     chrome.close()
     chrome.quit()
 
+
+    chrome = create_brower()
     check_cookie()
 
 except NoSuchElementException:
@@ -53,6 +63,7 @@ except NoSuchElementException:
 
 #  获取详细信息
 def find_result(name):
+    print('正在查询---%s' % name, end='')
     chrome.get("https://www.tianyancha.com/search?key=%s" % name)
     try:
         results = chrome.find_elements_by_class_name('search-result-single')
@@ -70,6 +81,7 @@ def find_result(name):
     result['regDate'] = chrome.find_element_by_css_selector('div.info div:nth-child(3) span').text
 
     result['phone'] = chrome.find_element_by_css_selector('div.contact div:nth-child(1) span.link-hover-click').text
+    print(result)
     return result
 
 # 读取查询列表
@@ -80,19 +92,6 @@ with open('./data/search.txt') as f:
         for company in companies:
             r.write(str(find_result(company)) + '\n')
 
-
-
-# chrome.find_element_by_xpath("//div[text()='天眼一下']").click()
-
-# chrome.find_element_by_xpath(u"//img[@alt='强化学习 (Reinforcement Learning)']").click()
-# chrome.find_element_by_link_text("About").click()
-# chrome.find_element_by_link_text(u"赞助").click()
-# chrome.find_element_by_link_text(u"教程 ▾").click()
-# chrome.find_element_by_link_text(u"数据处理 ▾").click()
-# chrome.find_element_by_link_text(u"网页爬虫").click()
-# 得到网页 html, 还能截图
-# html = chrome.page_source       # get html
-# chrome.get_screenshot_as_file("/Users/fitz/Documents/github.com/Python/spider/img/sreenshot1.png")
 chrome.close()
 chrome.quit()
 
