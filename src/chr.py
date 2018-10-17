@@ -17,13 +17,14 @@ chrome_options.add_argument('headless')
 
 chrome = webdriver.Chrome(options=chrome_options)
 
+path = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 
 def check_cookie():
     print('检测是否有cookie')
     if os.path.exists('./data/cookie.json'):
         print('开始读取cookie')
         chrome.get('https://www.tianyancha.com/login')
-        with open('./data/cookie.json', 'r') as fs:
+        with open(os.path.join(path, 'data/cookie.json'), 'r') as fs:
             cookies = json.loads(fs.read())
             for cookie in cookies:
                 chrome.add_cookie(cookie)
@@ -35,7 +36,7 @@ def login():
     WebDriverWait(chrome, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'a[event-name=导航-用户中心]')))
     print('登陆成功,开始获取cookie')
     jsonStr = json.dumps(chrome.get_cookies())
-    with open('./data/cookie.json', 'w') as f:
+    with open(os.path.join(path, 'data/cookie.json'), 'w') as f:
         f.write(jsonStr)
 
 #  获取详细信息
@@ -75,7 +76,7 @@ except NoSuchElementException:
     
 
 # 读取查询列表
-with open('./data/search.txt') as f:
+with open(os.path.join(path, 'data/search.txt'), 'r') as f:
     companies = f.readlines()
     wb = Workbook()
     sheet = wb.active
@@ -85,7 +86,7 @@ with open('./data/search.txt') as f:
         result = find_result(company)
         if result:
             sheet.append(result)
-    wb.save('./data/result.xlsx')
+    wb.save(os.path.join(path, 'data/result.xlsx'))
 
 chrome.close()
 chrome.quit()
