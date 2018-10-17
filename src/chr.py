@@ -1,64 +1,65 @@
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import NoSuchElementException
-
-import time
 import json
 import os
+import time
+from typing import Dict
 
-def create_brower():
+from openpyxl import Workbook
+from selenium import webdriver
+from selenium.common.exceptions import NoSuchElementException
+
+
+def create_browser():
     chrome_options = webdriver.chrome.options.Options()
     chrome_options.add_argument('headless')
     return webdriver.Chrome(options=chrome_options)
 
+
+chrome = create_browser()
+
+
 def check_cookie():
     if os.path.exists('./data/cookie.json'):
         chrome.get("https://www.tianyancha.com")
-        with open('./data/cookie.json', 'r') as f:
-            cookies = json.loads(f.read())
+        with open('./data/cookie.json', 'r') as fs:
+            cookies = json.loads(fs.read())
             for cookie in cookies:
                 chrome.add_cookie(cookie)
 
-chrome = create_brower()
 
 check_cookie()
 
 # 将刚刚复制的帖在这
 chrome.get("https://www.tianyancha.com/search?key=百度")
 
-
-try:
-    chrome.find_element_by_xpath("//div[text()='登录']")
-#  关闭无头浏览器
+if chrome.current_url.find('https://www.tianyancha.com/login') != -1:
+    print('关闭无头浏览器')
+    #  关闭无头浏览器
     chrome.close()
     chrome.quit()
-# 
     chrome = webdriver.Chrome()
+    chrome.get("https://www.tianyancha.com/search?key=百度")
 
-    chrome.find_element_by_xpath("//input[@onfocus=\"clearMsg('phone')\"]").send_keys(13699146887)
+    chrome.find_element_by_xpath("//input[@onfocus=\"clearMsg('phone')\"]").send_keys(int(input('请输入手机号:')))
     chrome.find_element_by_xpath("//div[text()='短信验证码登录']").click()
     chrome.find_element_by_id('smsCodeBtn').click()
-    time.sleep(1)
-    chrome.find_element_by_xpath("//div[@class='pb10 over-hide position-rel']/input[@placeholder='请输入验证码']").send_keys(int(input('输入验证码:')))
+
+    chrome.implicitly_wait(5)
+
+    chrome.find_element_by_xpath("//div[@class='pb10 over-hide position-rel']/input[@placeholder='请输入验证码']").send_keys(
+        int(input('如有验证码,请滑动弹出狂验证后输入验证码:')))
     chrome.find_element_by_xpath("//div[@onclick='loginByMes()']").click()
 
-    time.sleep(10)
+    time.sleep(5)
     print('开始获取cookie')
     jsonStr = json.dumps(chrome.get_cookies())
     with open('./data/cookie.json', 'w') as f:
         f.write(jsonStr)
-    
+
     chrome.close()
     chrome.quit()
 
-
-    chrome = create_brower()
+    chrome = create_browser()
     check_cookie()
-
-except NoSuchElementException:
-    print('已登录')
 
 
 #  获取详细信息
@@ -72,26 +73,30 @@ def find_result(name):
         return
     if len(results) == 0:
         return
-    result = {}
-    result['name'] = chrome.find_element_by_css_selector('div.content div.header a').text
-    result['status'] = chrome.find_element_by_css_selector('div.content div.header div').text
+    name = chrome.find_element_by_css_selector('div.content div.header a').text
+    status = chrome.find_element_by_css_selector('div.content div.header div').text
 
-    result['legalPerson'] = chrome.find_element_by_css_selector('div.info div:nth-child(1) a').text
-    result['registeredCapital'] = chrome.find_element_by_css_selector('div.info div:nth-child(2) span').text
-    result['regDate'] = chrome.find_element_by_css_selector('div.info div:nth-child(3) span').text
+    legal_person = chrome.find_element_by_css_selector('div.info div:nth-child(1) a').text
+    registered_capital = chrome.find_element_by_css_selector('div.info div:nth-child(2) span').text
+    reg_date = chrome.find_element_by_css_selector('div.info div:nth-child(3) span').text
 
-    result['phone'] = chrome.find_element_by_css_selector('div.contact div:nth-child(1) span.link-hover-click').text
-    print(result)
-    return result
+    phone = chrome.find_element_by_css_selector('div.contact div:nth-child(1) span.link-hover-click').text
+    return name, status, legal_person, registered_capital, reg_date, phone
+
 
 # 读取查询列表
 
 with open('./data/search.txt') as f:
     companies = f.readlines()
-    with open('./data/result.txt', 'w') as r:
-        for company in companies:
-            r.write(str(find_result(company)) + '\n')
+    wb = Workbook()
+    sheet = wb.active
+    sheet.title = '天眼查结果'
+    sheet.append(['名称', '状态', '法人代表', '注册资本', '注册时间', '联系电话'])
+    for company in companies:
+        result = find_result(company)
+        if result:
+            sheet.append(result)
+    wb.save('./data/result.xlsx')
 
 chrome.close()
 chrome.quit()
-
