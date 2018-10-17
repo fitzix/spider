@@ -6,61 +6,37 @@ from typing import Dict
 from openpyxl import Workbook
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.wait import WebDriverWait
 
 
-def create_browser():
-    chrome_options = webdriver.chrome.options.Options()
-    chrome_options.add_argument('headless')
-    return webdriver.Chrome(options=chrome_options)
+print('开始创建浏览器')
+chrome_options = webdriver.chrome.options.Options()
+chrome_options.add_argument('headless')
 
-
-chrome = create_browser()
+chrome = webdriver.Chrome(options=chrome_options)
 
 
 def check_cookie():
+    print('检测是否有cookie')
     if os.path.exists('./data/cookie.json'):
-        chrome.get("https://www.tianyancha.com")
+        print('开始读取cookie')
+        chrome.get('https://www.tianyancha.com/login')
         with open('./data/cookie.json', 'r') as fs:
             cookies = json.loads(fs.read())
             for cookie in cookies:
                 chrome.add_cookie(cookie)
 
-
-check_cookie()
-
-# 将刚刚复制的帖在这
-chrome.get("https://www.tianyancha.com/search?key=百度")
-
-if chrome.current_url.find('https://www.tianyancha.com/login') != -1:
-    print('关闭无头浏览器')
-    #  关闭无头浏览器
-    chrome.close()
-    chrome.quit()
-    chrome = webdriver.Chrome()
-    chrome.get("https://www.tianyancha.com/search?key=百度")
-
+def login():
     chrome.find_element_by_xpath("//input[@onfocus=\"clearMsg('phone')\"]").send_keys(int(input('请输入手机号:')))
-    chrome.find_element_by_xpath("//div[text()='短信验证码登录']").click()
-    chrome.find_element_by_id('smsCodeBtn').click()
-
-    chrome.implicitly_wait(5)
-
-    chrome.find_element_by_xpath("//div[@class='pb10 over-hide position-rel']/input[@placeholder='请输入验证码']").send_keys(
-        int(input('如有验证码,请滑动弹出狂验证后输入验证码:')))
-    chrome.find_element_by_xpath("//div[@onclick='loginByMes()']").click()
-
-    time.sleep(5)
-    print('开始获取cookie')
+    chrome.find_element_by_css_selector("input[placeholder='请输入密码']").send_keys(input('请输入密码:'))
+    chrome.find_element_by_css_selector("div[tyc-event-ch='Login.Login']").click()
+    WebDriverWait(chrome, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'a[event-name=导航-用户中心]')))
+    print('登陆成功,开始获取cookie')
     jsonStr = json.dumps(chrome.get_cookies())
     with open('./data/cookie.json', 'w') as f:
         f.write(jsonStr)
-
-    chrome.close()
-    chrome.quit()
-
-    chrome = create_browser()
-    check_cookie()
-
 
 #  获取详细信息
 def find_result(name):
@@ -84,8 +60,21 @@ def find_result(name):
     return name, status, legal_person, registered_capital, reg_date, phone
 
 
-# 读取查询列表
+check_cookie()
 
+chrome.get('https://www.tianyancha.com/login')
+
+
+try:
+    print('检测是否登录成功')
+    chrome.find_element_by_css_selector('a[event-name=导航-用户中心]')
+    print('登录成功')
+except NoSuchElementException:
+    print('cookie登录失败, 开始登录')
+    login()
+    
+
+# 读取查询列表
 with open('./data/search.txt') as f:
     companies = f.readlines()
     wb = Workbook()
