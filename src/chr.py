@@ -24,7 +24,7 @@ def check_cookie():
     if os.path.exists('./data/cookie.json'):
         print('开始读取cookie')
         chrome.get('https://www.tianyancha.com/login')
-        with open(os.path.join(path, 'data/cookie.json'), 'r') as fs:
+        with open(os.path.join(path, 'data/cookie.json'), 'rt', encoding='utf-8') as fs:
             cookies = json.loads(fs.read())
             for cookie in cookies:
                 chrome.add_cookie(cookie)
@@ -36,7 +36,7 @@ def login():
     WebDriverWait(chrome, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'a[event-name=导航-用户中心]')))
     print('登陆成功,开始获取cookie')
     jsonStr = json.dumps(chrome.get_cookies())
-    with open(os.path.join(path, 'data/cookie.json'), 'w') as f:
+    with open(os.path.join(path, 'data/cookie.json'), 'w', encoding='utf-8') as f:
         f.write(jsonStr)
 
 #  获取详细信息
@@ -50,7 +50,8 @@ def find_result(name):
         return
     if len(results) == 0:
         return
-    name = chrome.find_element_by_css_selector('div.content div.header a').text
+    nameElement = chrome.find_element_by_css_selector('div.content div.header a')
+    name = nameElement.text
     status = chrome.find_element_by_css_selector('div.content div.header div').text
 
     legal_person = chrome.find_element_by_css_selector('div.info div:nth-child(1) a').text
@@ -58,8 +59,12 @@ def find_result(name):
     reg_date = chrome.find_element_by_css_selector('div.info div:nth-child(3) span').text
 
     phone = chrome.find_element_by_css_selector('div.contact div:nth-child(1) span.link-hover-click').text
-    return name, status, legal_person, registered_capital, reg_date, phone
 
+#  获取详细信息
+    chrome.get(nameElement.get_attribute('href'))
+    print(chrome.current_url)
+
+    return name, status, legal_person, registered_capital, reg_date, phone
 
 check_cookie()
 
@@ -76,7 +81,7 @@ except NoSuchElementException:
     
 
 # 读取查询列表
-with open(os.path.join(path, 'data/search.txt'), 'r') as f:
+with open(os.path.join(path, 'data/search.txt'), 'rt', encoding='utf-8') as f:
     companies = f.readlines()
     wb = Workbook()
     sheet = wb.active
