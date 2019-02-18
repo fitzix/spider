@@ -1,5 +1,4 @@
 .vscode
 .DS_Store
 .idea
-data/cookie.json
-data/result.xlsx
+node_modules/
