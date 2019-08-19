@@ -32,5 +32,5 @@ release:
 puts:
   - name: bintray
     mode: archive
-    target: https://api.bintray.com/content/fitz/aliexpress/{{ .ProjectName }}/{{ .Version }}/
+    target: https://api.bintray.com/content/fitz/{{ .ProjectName }}/dev/{{ .Version }}/
     username: fitz
