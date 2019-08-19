@@ -31,6 +31,5 @@ release:
 
 puts:
   - name: bintray
-    mode: binary
-    target: https://api.bintray.com/content/fitz/{{ .ProjectName }}/dev/{{ .Version }}/{{ .Os }}/{{ .Arch }}{{ if .Arm }}{{ .Arm }}{{ end }}
-    username: fitz
+    mode: archive
+    target: https://api.bintray.com/content/fitz/{{ .ProjectName }}/dev/{{ .Version }}/
