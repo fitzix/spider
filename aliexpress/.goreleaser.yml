@@ -26,7 +26,11 @@ changelog:
       - '^docs:'
       - '^test:'
 
+release:
+  disable: true
+
 puts:
   - name: bintray
+    mode: archive
     target: https://api.bintray.com/content/fitz/aliexpress/{{ .ProjectName }}/{{ .Version }}/
     username: fitz
