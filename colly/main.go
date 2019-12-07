@@ -1,103 +1,192 @@
 package main
 
 import (
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"strconv"
+	"strings"
+	"time"
 
+	"github.com/fitzix/colly/browser"
+	"github.com/gobuffalo/packr/v2"
 	"github.com/gocolly/colly"
+	"github.com/gorilla/websocket"
 )
 
-func x() {
-	c := colly.NewCollector()
+type amazonComment struct {
+	Name        string `json:"name"`
+	Star        string `json:"star"`
+	ReviewTitle string `json:"reviewTitle"`
+	ReviewLink  string `json:"reviewLink"`
+	Date        string `json:"date"`
+	Content     string `json:"content"`
+	HelpfulVote string `json:"helpfulVote"`
+	Sku         string `json:"SKU"`
+	Asin        string `json:"ASIN"`
+}
 
-	// Find and visit all links
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+}
+
+func main() {
+
+	box := packr.New("public", "./public")
+
+	html, _ := box.Find("index.html")
+
+	http.HandleFunc("/parse", ws)
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write(html)
+	})
+
+	http.HandleFunc("/s", func(w http.ResponseWriter, r *http.Request) {
+		r.ParseForm()
+
+		log.Println(r.FormValue("name"))
+	})
+
+	log.Println("listening on", ":7171")
+	browser.Open("http://127.0.0.1:7171")
+	if err := http.ListenAndServe(":7171", nil); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func parse(url string, maxDep int, msg, csv chan amazonComment) {
+	c := colly.NewCollector(colly.Async(true), colly.MaxDepth(maxDep))
+
+	_ = c.Limit(&colly.LimitRule{
+		DomainGlob:  "*amazon.*",
+		Parallelism: 2,
+		Delay:       2 * time.Second,
+	})
+
+	// count links
 	c.OnHTML("#cm_cr-pagination_bar > ul > li.a-last > a", func(e *colly.HTMLElement) {
 		_ = e.Request.Visit(e.Attr("href"))
 	})
 
 	c.OnHTML("#cm_cr-review_list", func(e *colly.HTMLElement) {
 		e.ForEach("div[data-hook=review]", func(i int, e *colly.HTMLElement) {
-			log.Printf("name ==== %s", e.ChildText("div > div > div:nth-child(1) > a > div.a-profile-content > span"))
-			log.Printf("start ==== %s", e.ChildAttr("div > div > div:nth-child(2) > a:nth-child(1)", "title"))
-			log.Printf("review title ==== %s", e.ChildText("div > div > div:nth-child(2) > a.a-size-base.a-link-normal.review-title.a-color-base.review-title-content.a-text-bold > span"))
-			log.Printf("date ==== %s", e.ChildText("div > div > span.review-date"))
-			log.Printf("content ==== %s", e.ChildText("div > div > div.a-row.a-spacing-small.review-data > span > span"))
+
+			p := amazonComment{
+				Name:        e.ChildText("div > div > div:nth-child(1) > a > div.a-profile-content > span"),
+				ReviewTitle: e.ChildText("div > div > div:nth-child(2) > a.a-size-base.a-link-normal.review-title.a-color-base.review-title-content.a-text-bold > span"),
+				ReviewLink:  e.Request.AbsoluteURL(e.ChildAttr("div > div > div:nth-child(2) > a.a-size-base.a-link-normal.review-title.a-color-base.review-title-content.a-text-bold", "href")),
+				Content:     e.ChildText("div > div > div.a-row.a-spacing-small.review-data > span > span"),
+			}
+
+			starStr := e.ChildAttr("div > div > div:nth-child(2) > a:nth-child(1)", "title")
+			if startArr := strings.Split(starStr, " "); len(startArr) > 0 {
+				p.Star = startArr[0]
+			}
+
+			commentDateStr := e.ChildText("div > div > span.review-date")
+			if commentDateArr := strings.Split(commentDateStr, " "); len(commentDateArr) > 0 {
+				p.Date = commentDateArr[0]
+			}
+
+			helpfulStr := e.ChildText("div.a-row.a-spacing-none > div > div.a-row.review-comments > div > span.cr-vote > div.a-row.a-spacing-small > span")
+			if helpfulArr := strings.Split(helpfulStr, " "); len(helpfulArr) > 0 {
+				p.HelpfulVote = helpfulArr[0]
+			}
+
+			skuStr := e.ChildText("div > div > div.a-row.a-spacing-mini.review-data.review-format-strip > a")
+			p.Sku = strings.TrimPrefix(skuStr, "Style: ")
+
+			asinStr := e.ChildAttr("div > div > div.a-row.a-spacing-mini.review-data.review-format-strip > a", "href")
+			if asinArr := strings.Split(asinStr, "/"); len(asinArr) > 4 {
+				p.Asin = asinArr[3]
+			}
+
+			msg <- p
+			csv <- p
 		})
 	})
 
 	c.OnRequest(func(r *colly.Request) {
-		fmt.Println("Visiting", r.URL)
+		log.Println("Visiting", r.URL)
 	})
 
-	_ = c.Visit("https://www.amazon.com/Joycuff-Inspirational-Bracelets-Encouragement-Personalized/product-reviews/B07CZFLS33/ref=cm_cr_getr_d_paging_btm_prev_1?ie=UTF8&reviewerType=all_reviews&pageNumber=1")
+	c.OnError(func(r *colly.Response, err error) {
+		log.Println("error:", r.StatusCode, err)
+	})
+
+	if err := c.Visit(url); err != nil {
+		log.Println(err)
+	}
+	c.Wait()
 }
 
-type pageInfo struct {
-	Name string
-	Star string
-	ReviewTitle string
-	Date string
-	Content string
-	StatusCode int
-}
-
-func handler(w http.ResponseWriter, r *http.Request) {
+func ws(w http.ResponseWriter, r *http.Request) {
 	URL := r.URL.Query().Get("url")
 	if URL == "" {
 		log.Println("missing URL argument")
 		return
 	}
-	log.Println("visiting", URL)
+	maxDepth := 1
+	maxDepthStr := r.URL.Query().Get("max")
+	if maxDepthStr != "" {
+		if max, err := strconv.Atoi(maxDepthStr); err == nil {
+			maxDepth = max
+		}
+	}
 
-	c := colly.NewCollector()
+	msgChan := make(chan amazonComment, 100)
+	csvChan := make(chan amazonComment, 100)
+	go parse(URL, maxDepth, msgChan, csvChan)
+	go writeToCsv(csvChan)
 
-	p := &pageInfo{}
-
-	// count links
-	// c.OnHTML("#cm_cr-pagination_bar > ul > li.a-last > a", func(e *colly.HTMLElement) {
-	// 	_ = e.Request.Visit(e.Attr("href"))
-	// })
-
-	c.OnHTML("#cm_cr-review_list", func(e *colly.HTMLElement) {
-		e.ForEach("div[data-hook=review]", func(i int, e *colly.HTMLElement) {
-			p.Name = e.ChildText("div > div > div:nth-child(1) > a > div.a-profile-content > span")
-			p.Star = e.ChildAttr("div > div > div:nth-child(2) > a:nth-child(1)", "title")
-			p.ReviewTitle = e.ChildText("div > div > div:nth-child(2) > a.a-size-base.a-link-normal.review-title.a-color-base.review-title-content.a-text-bold > span")
-			p.Date = e.ChildText("div > div > span.review-date")
-			p.Content = e.ChildText("div > div > div.a-row.a-spacing-small.review-data > span > span")
-		})
-	})
-
-	// extract status code
-	c.OnResponse(func(r *colly.Response) {
-		log.Println("response received", r.StatusCode)
-		p.StatusCode = r.StatusCode
-	})
-	c.OnError(func(r *colly.Response, err error) {
-		log.Println("error:", r.StatusCode, err)
-		p.StatusCode = r.StatusCode
-	})
-
-	_ = c.Visit(URL)
-
-	// dump results
-	b, err := json.Marshal(p)
+	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Println("failed to serialize response:", err)
+		log.Println(err)
 		return
 	}
-	w.Header().Add("Content-Type", "application/json")
-	_, _ = w.Write(b)
+	for {
+		comment := <-msgChan
+		comment.Content = ""
+		comment.ReviewLink = ""
+		resp, err := json.Marshal(comment)
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+		// Write message back to browser
+		if err = conn.WriteMessage(websocket.TextMessage, resp); err != nil {
+			return
+		}
+	}
 }
 
-func main() {
-	// example usage: curl -s 'http://127.0.0.1:7171/?url=http://go-colly.org/'
-	addr := ":7171"
+func writeToCsv(msg chan amazonComment) {
+	fileName := fmt.Sprintf("%d.csv", time.Now().Unix())
+	file, err := os.OpenFile(fileName, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0666)
+	if err != nil {
+		log.Fatalf("create file err: %s", err)
+	}
+	defer file.Close()
+	csvWriter := csv.NewWriter(file)
+	if err := csvWriter.Write([]string{"买家姓名", "标题链接", "评分", "评论时间", "SKU", "ASIN", "评论标题", "评论支持数", "评论内容"}); err != nil {
+		log.Fatalf("write file err: %s", err)
+	}
 
-	http.HandleFunc("/", handler)
+	ticker := time.NewTicker(time.Second * 30)
 
-	log.Println("listening on", addr)
-	log.Fatal(http.ListenAndServe(addr, nil))
+	for {
+		select {
+		case comment := <-msg:
+			if err := csvWriter.Write([]string{comment.Name, comment.ReviewLink, comment.Star, comment.Date, comment.Sku, comment.Asin, comment.ReviewTitle, comment.HelpfulVote, comment.Content}); err != nil {
+				log.Println("write csv file err: ", err)
+			}
+		case <-ticker.C:
+			csvWriter.Flush()
+		}
+	}
+
 }

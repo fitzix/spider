@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        #out {
+            height: 90vh;
+            overflow: auto;
+        }
+    </style>
+</head>
+<body>
+<label for="input">url</label><input id="input" type="text"/>
+<label for="max">查询页数</label><input id="max" type="text" value="10" />
+<button onclick="send()">Send</button>
+<div id="out">
+    <pre id="output"></pre>
+</div>
+
+<script>
+    let input = document.getElementById("input");
+    let max = document.getElementById("max");
+    let output = document.getElementById("output");
+    let out = document.getElementById("out");
+
+
+    function send() {
+        let socket = new WebSocket("ws://127.0.0.1:7171/parse?max=" + max.value +"&url=" + input.value);
+
+        socket.onopen = function () {
+            output.innerHTML += "Status: Connected\n";
+        };
+
+        socket.onmessage = function (e) {
+            output.innerHTML += "Server: " + e.data + "\n";
+            out.scrollTop = out.scrollHeight
+        };
+    }
+
+</script>
+</body>
+</html>

@@ -3,7 +3,13 @@
   "version": "1.0.0",
   "main": "index.js",
   "license": "MIT",
+  "whatsapp": {
+    "chromePath": "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+  },
+  "scripts": {
+    "whatsapp": "node whatsapp.js"
+  },
   "dependencies": {
-    "puppeteer": "^1.12.2"
+    "puppeteer-core": "^2.0.0"
   }
 }
