@@ -9,6 +9,6 @@
 
 ## FAQ
 
-- A: 如何查看 chrome 执行文件路径 位置
-  Q: 在 chrome 浏览器地址栏输入 chrome://version, 在 "可执行文件路径" 下可找到 chrome 的执行文件路径.
-  **注意: 对于 windows 系统你需要把路径中的"\"反斜线替换成"/"才可以配置在 package.json 中**
+- A: 如何查看 chrome 执行文件路径 位置  
+  Q: 在 chrome 浏览器地址栏输入 chrome://version, 在 "可执行文件路径" 下可找到 chrome 的执行文件路径.  
+  **注意: 对于 windows 系统, 由于转移符问题 你需要把路径中的反斜线"\\"替换成正斜线"/"才可以配置在 package.json 中**
