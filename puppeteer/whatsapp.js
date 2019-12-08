@@ -5,7 +5,7 @@ const config = require('./package.json');
 
 const puppeteer = require('puppeteer-core');
 
-const chromePath = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+// const chromePath = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 
 let phoneToCheckStr = fs.readFileSync('phone.txt').toString();
 
