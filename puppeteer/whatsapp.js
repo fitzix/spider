@@ -9,8 +9,6 @@ let phoneNumberArr = phoneToCheckStr.split(os.EOL).filter(el => el.trim().length
 
 let availables = [];
 
-let av;
-
 let run = async () => {
   const browser = await puppeteer.launch({
     headless: false,
