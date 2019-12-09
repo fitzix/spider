@@ -10,6 +10,6 @@
     "whatsapp": "node whatsapp.js"
   },
   "dependencies": {
-    "puppeteer-core": "^2.0.0"
+    "puppeteer": "^2.0.0"
   }
 }

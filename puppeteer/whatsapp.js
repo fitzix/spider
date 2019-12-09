@@ -1,11 +1,7 @@
 const fs = require('fs');
 const os = require('os');
 
-const config = require('./package.json');
-
-const puppeteer = require('puppeteer-core');
-
-// const chromePath = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+const puppeteer = require('puppeteer');
 
 let phoneToCheckStr = fs.readFileSync('phone.txt').toString();
 
@@ -18,7 +14,6 @@ let av;
 let run = async () => {
   const browser = await puppeteer.launch({
     headless: false,
-    executablePath: config.whatsapp.chromePath,
     defaultViewport: null,
   });
   const page = await browser.newPage();

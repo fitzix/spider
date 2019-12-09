@@ -211,10 +211,10 @@ proxy-from-env@^1.0.0:
   resolved "https://registry.npm.taobao.org/proxy-from-env/download/proxy-from-env-1.0.0.tgz#33c50398f70ea7eb96d21f7b817630a55791c7ee"
   integrity sha1-M8UDmPcOp+uW0h97gXYwpVeRx+4=
 
-puppeteer-core@^2.0.0:
+puppeteer@^2.0.0:
   version "2.0.0"
-  resolved "https://registry.npm.taobao.org/puppeteer-core/download/puppeteer-core-2.0.0.tgz#2c3b122dec539ff01e6dfc29ee3e6f3a6280330d"
-  integrity sha1-LDsSLexTn/Aebfwp7j5vOmKAMw0=
+  resolved "https://registry.npm.taobao.org/puppeteer/download/puppeteer-2.0.0.tgz?cache=0&sync_timestamp=1571931842372&other_urls=https%3A%2F%2Fregistry.npm.taobao.org%2Fpuppeteer%2Fdownload%2Fpuppeteer-2.0.0.tgz#0612992e29ec418e0a62c8bebe61af1a64d7ec01"
+  integrity sha1-BhKZLinsQY4KYsi+vmGvGmTX7AE=
   dependencies:
     debug "^4.1.0"
     extract-zip "^1.6.6"
