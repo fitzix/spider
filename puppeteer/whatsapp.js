@@ -28,8 +28,14 @@ let run = async () => {
 
   for (const item of phoneNumberArr) {
     await page.goto(`https://web.whatsapp.com/send?phone=${item}&text=2333`);
-    await page.waitForSelector('#app > div > span:nth-child(2) > div > span > div > div > div > div', { visible: true });
-    await page.waitFor(500);
+    let find = await page.waitForSelector('#app > div > span:nth-child(2) > div > span > div > div > div > div', { visible: true }).catch(() => 'timeout');
+
+    if (find === 'timeout') {
+      console.log(item, ' ×××××× -- 超时');
+      continue;
+    }
+
+    await page.waitFor(1000);
     let msg = await page.$eval('#app > div > span:nth-child(2) > div > span > div > div > div > div div > div._2Vo52', el => el.textContent).catch(() => '有效');
     if (msg === '透过网址分享的电话号码无效') {
       console.log(item, ' ××××××');
