@@ -32,9 +32,9 @@ let run = async () => {
     await page.waitFor(500);
     let msg = await page.$eval('#app > div > span:nth-child(2) > div > span > div > div > div > div div > div._2Vo52', el => el.textContent).catch(() => '有效');
     if (msg === '透过网址分享的电话号码无效') {
-      console.log(item, ' xxx无效xxx');
+      console.log(item, ' ××××××');
     } else {
-      console.log(item, ' ---有效---');
+      console.log(item, ' √√√√√√');
       availables.push(item);
     }
   }
