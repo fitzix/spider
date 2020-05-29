@@ -22,7 +22,7 @@ let run = async () => {
 
   await page.waitForNavigation({ timeout: 0 });
 
-  // await page.waitFor(3000);
+  await page.waitFor(3000);
 
   console.log('开始检测');
 
