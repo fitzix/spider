@@ -24,7 +24,7 @@ func Run() {
 	}
 	defer f.Close()
 
-	resultFile, err := os.OpenFile(fmt.Sprintf("%s.csv", time.Now().Format("2006-01-02.03:15:04")), os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0666)
+	resultFile, err := os.OpenFile(fmt.Sprintf("%s.csv", time.Now().Format("20060102031504")), os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0666)
 	if err != nil {
 		log.Fatalf("创建结果文件失败--->%v", err)
 	}
@@ -41,7 +41,7 @@ func Run() {
 	defer cancel()
 
 	if err := chromedp.Run(ctx,
-		chromedp.Navigate("https://web.clients.com"),
+		chromedp.Navigate("https://web.whatsapp.com"),
 		chromedp.WaitVisible("#pane-side", chromedp.ByID),
 	); err != nil {
 		log.Fatalf("登录失败--->%v", err)
@@ -64,8 +64,9 @@ func Run() {
 			continue
 		}
 		if err := chromedp.Run(ctx,
-			chromedp.Navigate(fmt.Sprintf("https://web.clients.com/send?phone=%s&text=2333", line)),
+			chromedp.Navigate(fmt.Sprintf("https://web.whatsapp.com/send?phone=%s&text=2333", line)),
 			chromedp.WaitVisible("#app > div > div > div:nth-child(4)", chromedp.ByQuery),
+			chromedp.Sleep(time.Millisecond*500),
 			chromedp.QueryAfter("#main > footer", func(ctx context.Context, node ...*cdp.Node) error {
 				if len(node) > 0 {
 					log.Printf("%s ------> √√√√√√", line)
