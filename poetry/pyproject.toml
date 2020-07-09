@@ -5,12 +5,17 @@ description = ""
 authors = ["fitzix <caojunkaiv@gmail.com>"]
 
 [[tool.poetry.source]]
-name = "tuna"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
+name = "ali"
+url = "https://mirrors.aliyun.com/pypi/simple/"
+default = true
 
 [tool.poetry.dependencies]
 python = "^3.6"
-requests = "^2.22.0"
+flask = "^1.1.1"
+python-dotenv = "^0.10.3"
+flask-apscheduler = "^1.11.0"
+kubernetes = "^10.0.1"
+flask-sqlalchemy = "^2.4.1"
 
 [tool.poetry.dev-dependencies]
 

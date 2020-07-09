@@ -37,6 +37,7 @@ let run = async () => {
     }
 
     await page.waitFor(1000);
+    
     if ((await page.$('#main > footer')) !== null) {
       process.stdout.write('√√√√√√' + '\n');
     } else {
