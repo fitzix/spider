@@ -1,4 +1,4 @@
-package whatsapp
+package clients
 
 import (
 	"bufio"
@@ -41,7 +41,7 @@ func Run() {
 	defer cancel()
 
 	if err := chromedp.Run(ctx,
-		chromedp.Navigate("https://web.whatsapp.com"),
+		chromedp.Navigate("https://web.clients.com"),
 		chromedp.WaitVisible("#pane-side", chromedp.ByID),
 	); err != nil {
 		log.Fatalf("登录失败--->%v", err)
@@ -64,7 +64,7 @@ func Run() {
 			continue
 		}
 		if err := chromedp.Run(ctx,
-			chromedp.Navigate(fmt.Sprintf("https://web.whatsapp.com/send?phone=%s&text=2333", line)),
+			chromedp.Navigate(fmt.Sprintf("https://web.clients.com/send?phone=%s&text=2333", line)),
 			chromedp.WaitVisible("#app > div > div > div:nth-child(4)", chromedp.ByQuery),
 			chromedp.QueryAfter("#main > footer", func(ctx context.Context, node ...*cdp.Node) error {
 				if len(node) > 0 {
