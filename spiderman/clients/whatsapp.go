@@ -17,6 +17,11 @@ import (
 	"github.com/chromedp/chromedp"
 )
 
+const (
+	successSymbol = "✅"
+	errSymbol     = "❌"
+)
+
 func Run() {
 	f, err := os.Open("phone.txt")
 	if err != nil {
@@ -68,17 +73,18 @@ func Run() {
 			chromedp.WaitVisible("#app > div > div > div:nth-child(4)", chromedp.ByQuery),
 			chromedp.Sleep(time.Millisecond*500),
 			chromedp.QueryAfter("#main > footer", func(ctx context.Context, node ...*cdp.Node) error {
+				symbol := errSymbol
 				if len(node) > 0 {
-					log.Printf("%s ------> √√√√√√", line)
-					if _, err := fmt.Fprintln(resultFile, string(line)); err != nil {
-						log.Printf("写入结果[%s]失败, err: %v", line, err)
-					}
-					return nil
+					symbol = successSymbol
 				}
-				return errors.New("not found")
+				log.Printf("%s ------> %s", line, symbol)
+				if _, err := fmt.Fprintln(resultFile, fmt.Sprintf("%s,%s", line, symbol)); err != nil {
+					log.Printf("写入结果失败 ---> %s", err)
+				}
+				return nil
 			}, chromedp.AtLeast(0)),
 		); err != nil {
-			log.Printf("%s ------> ××××××", line)
+			log.Printf("%s ------> %s", line, errSymbol)
 		}
 	}
 }
