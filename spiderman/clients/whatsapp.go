@@ -18,8 +18,8 @@ import (
 )
 
 const (
-	successSymbol = "✅"
-	errSymbol     = "❌"
+	successSymbol = "√√√√√√"
+	errSymbol     = "××××××"
 )
 
 func Run() {
