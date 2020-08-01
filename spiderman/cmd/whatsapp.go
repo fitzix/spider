@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"github.com/fitzix/spider/clients"
+	"github.com/fitzix/spider/services"
 	"github.com/spf13/cobra"
 )
 
@@ -15,6 +15,6 @@ func init() {
 var whatsAppCmd = &cobra.Command{
 	Use: "whatsapp",
 	Run: func(cmd *cobra.Command, args []string) {
-		clients.Run()
+		services.Run()
 	},
 }

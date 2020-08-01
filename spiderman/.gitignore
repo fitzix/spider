@@ -1,3 +1,7 @@
 phone.txt
 dist/
 *.csv
+chrome/
+spiderman
+app.log
+weibo.yml

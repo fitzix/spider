@@ -1,9 +1,10 @@
-package clients
+package services
 
 import (
 	"bufio"
 	"bytes"
 	"context"
+	"encoding/csv"
 	"errors"
 	"fmt"
 	"io"
@@ -13,13 +14,16 @@ import (
 	"time"
 
 	"github.com/chromedp/cdproto/cdp"
-	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"
 )
 
 const (
 	successSymbol = "√√√√√√"
 	errSymbol     = "××××××"
+)
+
+var (
+	total, invalid, success, fail int
 )
 
 func Run() {
@@ -37,8 +41,8 @@ func Run() {
 
 	allocator, allocatorCancel := chromedp.NewExecAllocator(
 		context.Background(),
-		chromedp.Flag("headless", false),
 		chromedp.NoFirstRun,
+		chromedp.NoDefaultBrowserCheck,
 	)
 	defer allocatorCancel()
 
@@ -49,23 +53,28 @@ func Run() {
 		chromedp.Navigate("https://web.whatsapp.com"),
 		chromedp.WaitVisible("#pane-side", chromedp.ByID),
 	); err != nil {
-		log.Fatalf("登录失败--->%v", err)
+		log.Printf("登录失败--->%v", err)
+		return
 	}
 
-	chromedp.ListenTarget(ctx, func(ev interface{}) {
-		if _, ok := ev.(*page.EventJavascriptDialogOpening); ok {
-			page.HandleJavaScriptDialog(true)
-		}
-	})
+	if _, err := resultFile.WriteString("\xEF\xBB\xBF"); err != nil {
+		log.Fatalf("写入csv bom err: ---> %v", err)
+	}
+
+	w := csv.NewWriter(resultFile)
+
+	_ = w.Write([]string{"phone", "status"})
 
 	buf := bufio.NewReader(f)
 	for {
 		line, _, err := buf.ReadLine()
 		if errors.Is(err, io.EOF) {
-			return
+			break
 		}
+		total++
 		line = bytes.TrimSpace(line)
 		if ok, err := regexp.Match(`(?m)[0-9]+`, line); err != nil || !ok {
+			invalid++
 			continue
 		}
 		if err := chromedp.Run(ctx,
@@ -75,16 +84,24 @@ func Run() {
 			chromedp.QueryAfter("#main > footer", func(ctx context.Context, node ...*cdp.Node) error {
 				symbol := errSymbol
 				if len(node) > 0 {
+					success++
 					symbol = successSymbol
+				} else {
+					fail++
 				}
+
 				log.Printf("%s ------> %s", line, symbol)
-				if _, err := fmt.Fprintln(resultFile, fmt.Sprintf("%s,%s", line, symbol)); err != nil {
+
+				if err := w.Write([]string{string(line), symbol}); err != nil {
 					log.Printf("写入结果失败 ---> %s", err)
 				}
+				w.Flush()
 				return nil
 			}, chromedp.AtLeast(0)),
 		); err != nil {
+			fail++
 			log.Printf("%s ------> %s", line, errSymbol)
 		}
 	}
+	log.Printf("共检测: %d, 格式错误: %d, 有效: %d, 无效:%d, 有效率: %.2f%%", total, invalid, success, fail, float64(success*100)/float64(total))
 }
