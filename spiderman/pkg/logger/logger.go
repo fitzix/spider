@@ -2,7 +2,6 @@ package logger
 
 import (
 	"log"
-	"os"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -11,20 +10,13 @@ import (
 var logger *zap.SugaredLogger
 
 func init() {
-	file, err := os.OpenFile("app.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
+	config := zap.NewProductionConfig()
+	config.OutputPaths = []string{"app.log"}
+	zapLog, err := config.Build(zap.AddStacktrace(zapcore.FatalLevel), zap.AddCaller(), zap.AddCallerSkip(1))
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	encoderConfig := zap.NewProductionEncoderConfig()
-	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
-	core := zapcore.NewCore(
-		zapcore.NewConsoleEncoder(encoderConfig),
-		zapcore.AddSync(file),
-		zap.InfoLevel,
-	)
-
-	logger = zap.New(core, zap.AddStacktrace(zapcore.FatalLevel), zap.AddCaller(), zap.AddCallerSkip(1)).Sugar()
+	logger = zapLog.Sugar()
 }
 
 func Info(args ...interface{}) {
