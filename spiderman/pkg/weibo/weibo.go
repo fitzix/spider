@@ -29,7 +29,9 @@ var (
 )
 
 func Init(token model.WeiboToken) {
-	httpClient = resty.New().SetTimeout(10 * time.Second)
+	httpClient = resty.New().SetTimeout(10*time.Second).
+		SetHeader("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.2 Safari/605.1.15").
+		SetHeader("Referer", "https://m.weibo.cn/")
 	weiboAuthConf = model.WeiboAuthConf{Cookies: []*http.Cookie{
 		{
 			Name:  "SUB",
@@ -120,10 +122,11 @@ func GetLatestWeibo(uid string) (string, error) {
 	if err := json.Unmarshal(resp.Body(), &userInfo); err != nil {
 		return "", err
 	}
-	if userInfo.OK != 1 {
-		return "", errors.New(userInfo.Msg)
+
+	if userInfo.OK == 1 && userInfo.Data.Statuses != nil && len(userInfo.Data.Statuses) > 0 {
+		return userInfo.Data.Statuses[0].MID, nil
 	}
-	return userInfo.Data.Statuses[0].MID, nil
+	return "", errors.New(userInfo.Msg)
 }
 
 func refreshToken() {

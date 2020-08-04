@@ -3,10 +3,11 @@ package model
 import "net/http"
 
 type WeiboConf struct {
-	Comments map[string][]string `yaml:"comments"`
-	Tick     int                 `yaml:"tick"`
-	Token    WeiboToken          `yaml:"token"`
-	Common   struct {
+	Comments   map[string][]string `yaml:"comments"`
+	Tick       int                 `yaml:"tick"`
+	Token      WeiboToken          `yaml:"token"`
+	Registered []string            `yaml:"registered"`
+	Common     struct {
 		Comments []string `yaml:"comments"`
 	} `yaml:"common"`
 }
