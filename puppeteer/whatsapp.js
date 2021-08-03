@@ -22,7 +22,7 @@ let run = async () => {
 
   await page.waitForNavigation({ timeout: 0 });
 
-  await page.waitFor(3000);
+  await page.waitForTimeout(3000);
 
   console.log('开始检测');
 
@@ -36,14 +36,14 @@ let run = async () => {
       continue;
     }
 
-    await page.waitFor(1000);
-    
-    if ((await page.$('#main > footer')) !== null) {
-      process.stdout.write('√√√√√√' + '\n');
-    } else {
+    let isAvailable = await page.waitForSelector('#main > footer', { visible: true, timeout: 3000 }).catch(() => 'timeout');
+    if (isAvailable === 'timeout') {
       process.stdout.write('××××××' + '\n');
-      availables.push(item);
+      continue
     }
+
+    process.stdout.write('√√√√√√' + '\n');
+    availables.push(item);
   }
 
   await browser.close();
